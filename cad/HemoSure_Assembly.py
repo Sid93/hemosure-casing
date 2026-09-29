@@ -7,7 +7,7 @@ import hemosure_casing as H
 
 def gen_step():
     P = H.build_all()
-    kids = [P["rear"], P["front"], P["door"], P["button"], P["optical"], P["lens"], P["overlay"], P["pcb"]] + H.build_ref_components()
+    kids = [P["rear"], P["front"], P["door"], P["button"], P["optical"], P["tray"], P["lens"], P["overlay"], P["pcb"]] + H.build_ref_components()
     asm = Compound(children=kids)
     asm.label = "HemoSure_Assembly"
     return asm

@@ -18,7 +18,7 @@ Everything is driven by the parameters below; drafts are built into the geometry
 from math import tan, radians
 
 from build123d import (
-    Box, Cone, Cylinder, Plane, Pos, RectangleRounded, Rectangle, Circle, loft, fillet,
+    Polygon, Box, Cone, Cylinder, Plane, Pos, RectangleRounded, Rectangle, Circle, loft, fillet,
     extrude, Align, Part, Compound, Color, Axis, Location, Solid,
 )
 
@@ -70,10 +70,20 @@ TACT_H = 5.0                         # 6x6 tact, H 5.0 +/-0.1, travel 0.25
 BTN_PLAY = 0.45                      # flange-to-face gap when the cap rests on the switch
 PCB_HOLD_GAP = 0.3                   # front top boss to PCB top (WC 0.04..0.56 with PCB 1.6 +/-0.16)
 
-# Cuvette / optical channel (generic 14.0 x 3.0 cuvette -- CONFIRM with the cuvette drawing)
-CUV_W, CUV_T = 14.0, 3.0
-CH_W, CH_H = CUV_W + 0.3, CUV_T + 0.3     # 0.15 clearance per side
-CH_Y_END = -25.0                     # cuvette end stop (inner face)
+# Strip-tray channel (the channel in the optical block that the strip TRAY slides in)
+CH_W, CH_H = 14.3, 3.3               # groove in the optical block
+CH_Y_END = -25.0                     # tray end stop (inner face) = axial datum for the strip
+
+# Test strip (ASSUMED -- replace with the Hb strip drawing) and the strip tray HS-106
+STRIP_W, STRIP_L, STRIP_T = 6.0, 30.0, 0.50
+STRIP_WIN_FROM_FRONT = 13.95          # read-window centre from the strip's front (insertion) edge
+TRAY_W, TRAY_T = 14.10, 3.10          # tray body: 0.10 / side to the groove, 0.20 under the LED board
+TRAY_FRONT_WALL = 1.0                 # tray front face to strip-pocket front wall
+TRAY_PREGAP = 0.05                    # modelled gap to the end stop (detent preloads it closed)
+POCKET_CLR = 0.05                     # strip pocket clearance per side / depth
+HANDLE_W, HANDLE_H, HANDLE_L = 24.0, 8.0, 8.5
+HANDLE_FACE_GAP = 0.5                 # handle face to housing skin (at P/L)
+PLUG_DEPTH, PLUG_GAP = 1.4, 0.3       # light-seal plug into the mouth funnel, radial gap
 CH_RIB = 1.2                         # channel wall (0.6 x WALL, avoids sink)
 CH_PLATE = 1.5                       # optical floor / ceiling plate
 OPT_Y = -40.0                        # optical axis (LED above, sensor below)
@@ -88,6 +98,9 @@ OB_Z1 = ZP + CH_H / 2                     # 15.85 top face = channel top, LED bo
 OB_EAR_X = 12.0
 LEDPCB_T = 0.8
 SENSOR_POCKET_D = 3.5                     # sensor board space under the block floor
+
+DET_Y = -36.0                        # detent bump centre (tray, inserted); clear of the LED-board heat-stake pins at y -31 / -49
+DET_PRELOAD = 0.15                   # notch offset towards +Y -> bump rides the notch ramp, pushes tray to the stop
 
 # Battery: LiPo 503035 (5.0 x 30 x 35, ~500 mAh) behind a user door
 BAT = (30.0, 35.0, 5.0)
@@ -227,7 +240,7 @@ def usb_tool():
 def cuvette_tools():
     """Lead-in funnel + throat through the bottom end wall. Full-round (stadium) ends: the side
     faces are curved, so they carry draft everywhere except the tangent line on the parting plane.
-    Throat straight length = CH_W, so the 14.0 x 3.0 cuvette passes."""
+    Throat straight length = CH_W, so the 14.1 x 3.1 strip tray passes."""
     y_skin = -L / 2
     tw = CH_W + CH_H
     funnel = loft([
@@ -415,6 +428,10 @@ def build_optical_block():
     # cuvette groove, open to the top (+Z) and to the mouth (-Y), end stop at CH_Y_END; nominal at mid-depth
     zg0 = ZP - CH_H / 2
     ob = ob - taper_box(-CH_W / 2 + 0.03, CH_W / 2 - 0.03, OB_Y0 - 1.0, CH_Y_END + 0.03, zg0, OB_Z1 + 0.1, gx=(CH_H + 0.1) * TAN1, gy=(CH_H + 0.1) * TAN1)
+    # tray detent notch in the +X groove wall (open top), shifted +Y so the bump preloads the tray to the stop
+    notch = [(CH_W / 2 - 0.05, DET_Y - 1.25 + DET_PRELOAD), (CH_W / 2 + 0.40, DET_Y - 0.35 + DET_PRELOAD),
+             (CH_W / 2 + 0.40, DET_Y + 0.15 + DET_PRELOAD), (CH_W / 2 - 0.05, DET_Y + 1.1 + DET_PRELOAD)]
+    ob = ob - extrude(Plane.XY.offset(zg0 - 0.01) * Polygon(*notch, align=None), OB_Z1 - zg0 + 0.2, taper=-1.0)
     # sensor pocket, open to the underside (-Z); 1.5 floor under the groove
     ob = ob - taper_box(-CH_W / 2, CH_W / 2, OB_Y0 + OB_WALL, CH_Y_END - 0.5, OB_Z0 - 0.1, zg0 - CH_PLATE)
     # sensor aperture
@@ -426,6 +443,82 @@ def build_optical_block():
     ob.label = "optical_block_BLACK_ABS"
     ob.color = Color(0.08, 0.08, 0.09)
     return ob
+
+
+# ----------------------------------------------------------------------------- strip tray
+
+def dbox(x0, x1, y0, y1, z0, z1, zp, grow=False):
+    """Box split at the parting plane zp with 1 deg draft each way (shrinks away from zp; grow=True
+    for cut tools, which must widen away from zp)."""
+    sgn = 1 if grow else -1
+    parts = []
+    if z1 > zp:
+        parts.append(taper_box(x0, x1, y0, y1, zp - 0.001, z1, g=sgn * (z1 - zp) * TAN1))
+    if z0 < zp:
+        parts.append(taper_box(x0, x1, y0, y1, zp + 0.001, z0, g=sgn * (zp - z0) * TAN1))
+    out = parts[0]
+    for q in parts[1:]:
+        out = out + q
+    return out
+
+
+def dprism(pts, z0, z1, zp):
+    """Polygon prism split at zp, 1 deg draft each way."""
+    f = Plane.XY.offset(zp) * Polygon(*pts, align=None)
+    return extrude(f, z1 - zp, taper=1.0) + extrude(f, -(zp - z0), taper=1.0)
+
+
+def funnel_size(y):
+    """Stadium size of the housing mouth funnel at y (linear from skin-0.5 to skin+WALL+0.5)."""
+    t = (y - (-L / 2 - 0.5)) / (WALL + 1.0)
+    return (FUNNEL_W + CH_H + 1.0) + t * ((CH_W + CH_H) - (FUNNEL_W + CH_H + 1.0)), FUNNEL_H + t * (CH_H - FUNNEL_H)
+
+
+TRAY_Z0 = ZP - CH_H / 2                         # tray rides on the groove floor
+TRAY_Y1 = CH_Y_END - TRAY_PREGAP                # tray front face (inserted)
+POCKET_Y1 = TRAY_Y1 - TRAY_FRONT_WALL           # strip front edge sits here
+HANDLE_Y0 = -L / 2 - HANDLE_FACE_GAP            # handle face
+
+
+def build_tray():
+    """HS-106 strip tray (black ABS). The user drops the strip into the pocket outside the meter,
+    slides the tray home (hard stop + detent click); the handle plugs the mouth (light seal).
+    Parting at ZP (same plane as the housings), 1 deg draft both ways."""
+    z0, z1 = TRAY_Z0, TRAY_Z0 + TRAY_T
+    hw = TRAY_W / 2
+    tray = dbox(-hw, hw, HANDLE_Y0 - 0.5, TRAY_Y1, z0, z1, ZP)
+    # handle + light-seal plug
+    tray = tray + dbox(-HANDLE_W / 2, HANDLE_W / 2, HANDLE_Y0 - HANDLE_L, HANDLE_Y0, ZP - HANDLE_H / 2, ZP + HANDLE_H / 2, ZP)
+    w0, h0 = funnel_size(HANDLE_Y0); w1, h1 = funnel_size(HANDLE_Y0 + PLUG_DEPTH)
+    sec = lambda y, w, h: Plane.XZ.offset(-y) * Pos(0, ZP) * RectangleRounded(w, h, h / 2 - 0.01)
+    # plug + sloped nose in one ruled loft (keeps every plug face drafted to the Z draw)
+    tray = tray + loft([sec(HANDLE_Y0 - 0.3, w0 - 2 * PLUG_GAP, h0 - 2 * PLUG_GAP),
+                        sec(HANDLE_Y0 + PLUG_DEPTH, w1 - 2 * PLUG_GAP, h1 - 2 * PLUG_GAP),
+                        sec(HANDLE_Y0 + PLUG_DEPTH + 0.35, w1 - 2 * PLUG_GAP - 0.3, 0.4)], ruled=True)
+    # grip ribs on the handle (top + bottom), 0.4 deep
+    for y in (HANDLE_Y0 - 2.5, HANDLE_Y0 - 4.5, HANDLE_Y0 - 6.5):
+        tray = tray - taper_box(-9, 9, y - 0.4, y + 0.4, ZP + HANDLE_H / 2 - 0.4, ZP + HANDLE_H / 2 + 0.1, g=0.02)
+        tray = tray - taper_box(-9, 9, y - 0.4, y + 0.4, ZP - HANDLE_H / 2 + 0.4, ZP - HANDLE_H / 2 - 0.1, g=0.02)
+    # strip pocket (open top)
+    pw, pl, pd = STRIP_W + 2 * POCKET_CLR, STRIP_L + 2 * POCKET_CLR, STRIP_T + POCKET_CLR
+    tray = tray - taper_box(-pw / 2, pw / 2, POCKET_Y1 - pl, POCKET_Y1, z1 - pd, z1 + 0.1, g=(pd + 0.1) * TAN1)
+    # finger / tweezer notch at the pocket's rear end
+    tray = tray - taper_box(-3.5, 3.5, POCKET_Y1 - pl - 3.6, POCKET_Y1 - pl + 2.0, z1 - 1.2, z1 + 0.1, g=0.03)
+    # read aperture through the tray floor (block aperture dia 2.0 is the optical stop)
+    ap = 2.4                                              # dia at the parting plane (narrowest)
+    tray = tray - cone1(0, OPT_Y, z0 - 0.1, ZP + 0.001, ap + 2 * (ZP - z0 + 0.1) * TAN1)
+    tray = tray - cone1(0, OPT_Y, z1 - pd + 0.01, ZP - 0.001, ap + 2 * (z1 - pd + 0.01 - ZP) * TAN1)
+    # detent: cantilever arm on +X side (slot through, free end towards +Y) with a ramped bump
+    tray = tray - dbox(hw - 1.7, hw - 1.1, DET_Y - 12.0, DET_Y + 1.1, z0 - 0.1, z1 + 0.1, ZP, grow=True)
+    tray = tray - dbox(hw - 1.7, hw + 0.3, DET_Y + 1.1, DET_Y + 1.6, z0 - 0.1, z1 + 0.1, ZP, grow=True)
+    bump = [(hw - 0.05, DET_Y - 1.4), (hw + 0.45, DET_Y - 0.4), (hw + 0.45, DET_Y + 0.1), (hw - 0.05, DET_Y + 1.05)]
+    tray = tray + dprism(bump, z0 + 0.1, z1 - 0.1, ZP)
+    # core-outs under the pocket side walls (uniform ~1.1 walls, no sink)
+    for (x0, x1, y0, y1) in [(-5.85, -3.9, -57.0, -45.0), (3.9, 5.85, -57.0, -49.5), (-5.85, -3.9, -36.0, -28.5)]:
+        tray = tray - taper_box(x0, x1, y0, y1, z0 - 0.1, ZP - 0.15, g=-0.03)     # stays below the P/L
+    tray.label = "strip_tray_BLACK_ABS"
+    tray.color = Color(0.1, 0.1, 0.11)
+    return tray
 
 
 # ----------------------------------------------------------------------------- button cap
@@ -486,8 +579,9 @@ def build_ref_components():
     tact.label, tact.color = "REF_tact_6x6x5", Color(0.2, 0.2, 0.2)
     bat = box(-BAT[0] / 2, BAT[0] / 2, DOOR_YC - BAT[1] / 2, DOOR_YC + BAT[1] / 2, DOOR_T + 0.05, DOOR_T + 0.05 + BAT[2])
     bat.label, bat.color = "REF_lipo_503035", Color(0.6, 0.6, 0.65)
-    cuv = box(-CUV_W / 2, CUV_W / 2, -L / 2 - 12, CH_Y_END - 0.05, ZP - CUV_T / 2, ZP + CUV_T / 2)
-    cuv.label, cuv.color = "REF_cuvette_14x3", Color(0.1, 0.1, 0.1)
+    zs = TRAY_Z0 + TRAY_T - STRIP_T - POCKET_CLR
+    cuv = box(-STRIP_W / 2, STRIP_W / 2, POCKET_Y1 - STRIP_L, POCKET_Y1, zs, zs + STRIP_T)
+    cuv.label, cuv.color = "REF_hb_strip_6x30x0.5", Color(0.85, 0.2, 0.2)
     led = box(-OB_X, OB_X, OPT_Y - 12, OPT_Y + 12, OB_Z1, OB_Z1 + LEDPCB_T)
     for y in (OPT_Y - 9.0, OPT_Y + 9.0):
         for sx in (1, -1):
@@ -499,5 +593,5 @@ def build_ref_components():
 def build_all():
     return {
         "rear": build_rear(), "front": build_front(), "door": build_door(), "button": build_button(),
-        "lens": build_lens(), "overlay": build_overlay(), "pcb": build_pcb(), "optical": build_optical_block(),
+        "lens": build_lens(), "overlay": build_overlay(), "pcb": build_pcb(), "optical": build_optical_block(), "tray": build_tray(),
     }

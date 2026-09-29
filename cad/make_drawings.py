@@ -10,7 +10,7 @@ import drawing_kit as K
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "drawings" / "HemoSure_Casing_Drawings_(Levram).pdf"
-N = 10
+N = 11
 ABS = "ABS natural white (LG HI-121H / PA-757 eq.)"
 ABS_BLK = "ABS black (2 % carbon MB)"
 TEXTURE = "Out VDI 3400 Ref 24 / In SPI B-2"
@@ -38,11 +38,11 @@ def sheet_ga(pdf):
         S.image(imgs[-1], 14, 160, 118)
     S.text(16, 282, "ISO VIEW (NTS)", fs=7, fontweight="bold")
     # assembly section at x = 0, 1:1, length vertical
-    asm = [P[k] for k in ("rear", "front", "door", "button", "optical", "lens", "overlay", "pcb")] + list(REFS.values())
+    asm = [P[k] for k in ("rear", "front", "door", "button", "optical", "tray", "lens", "overlay", "pcb")] + list(REFS.values())
     colors = {"rear": "#333", "front": "#333", "optical": "#000"}
     ox, oy = S.anchor("left", 160, 160, 1.0)
-    for k, shp in [(k, P[k]) for k in ("rear", "front", "door", "button", "optical", "lens", "overlay", "pcb")] + list(REFS.items()):
-        hatch = "////" if k in ("rear", "front") else ("xxxx" if k == "optical" else ("...." if k.startswith("REF") or k == "pcb" else "\\\\\\\\"))
+    for k, shp in [(k, P[k]) for k in ("rear", "front", "door", "button", "optical", "tray", "lens", "overlay", "pcb")] + list(REFS.items()):
+        hatch = "////" if k in ("rear", "front") else ("xxxx" if k in ("optical", "tray") else ("...." if k.startswith("REF") or k == "pcb" else "\\\\\\\\"))
         try:
             S.section(shp, "X", 0.0, "+", "left", ox, oy, 1.0, hatch=hatch)
         except Exception as e:
@@ -56,7 +56,8 @@ def sheet_ga(pdf):
         S.ax.plot([a[0], a[0]], [a[1], a[1] + 4 + (z * 0.9)], c=K.DIM, lw=K.LW_THIN)
         S.ax.text(a[0], a[1] + 5 + z * 0.9, lab, fontsize=4.8, rotation=90, color=K.DIM, ha="center", va="bottom")
     S.leader(Pm((0, 57.0, 13.5)), 22, 6, "USB-C (split on P/L)")
-    S.leader(Pm((0, -45, 14.2)), 24, -6, "Cuvette groove in black optical block")
+    S.leader(Pm((0, -45, 14.2)), 24, -6, "Strip tray (HS-106) in black optical block")
+    S.leader(Pm((0, -65, 14.2)), 24, -14, "Tray handle = light-seal plug")
     S.leader(Pm((0, H.BTN_Y, 21)), 24, 0, "Button cap on 6x6x5 tact")
     S.leader(Pm((0, 25, 21.3)), 24, 4, "PMMA lens 0.8 + PC overlay")
     S.leader(Pm((0, 9, 1)), -30, -4, "Battery door (LiPo 503035)")
@@ -67,6 +68,7 @@ def sheet_ga(pdf):
             ["3", "HS-103", "Battery door", "ABS white", "1", "Inj. mould - Tool A (cav 3)"],
             ["4", "HS-104", "Power button cap", "ABS black", "1", "Inj. mould - Tool B (cav 1)"],
             ["5", "HS-105", "Optical block (light-tight)", "ABS black", "1", "Inj. mould - Tool B (cav 2)"],
+            ["5a", "HS-106", "Strip tray (slide-in, detent)", "ABS black", "1", "Inj. mould - Tool B (cav 3)"],
             ["6", "HS-201", "Display lens 33.8x40.8x0.8", "PMMA, HC one side", "1", "Laser cut + 3M 9471LE"],
             ["7", "HS-202", "Graphic overlay 54.6x114.6", "PC 0.175 + 7952MP", "1", "Screen print + die cut"],
             ["8", "EJOT PT K25x16", "Housing screw", "Steel Zn", "4", "Torque 0.35 Nm"],
@@ -78,14 +80,16 @@ def sheet_ga(pdf):
     S.notes(250, 216, [
         "1. Datum A = parting plane (P/L), z = 14.2 from the rear skin. B = centre line X. C = centre line Y.",
         "2. All plastics: ABS, mould shrink 0.5 % built into the tool STEP data (see HS-300 sheets).",
-        "3. Parting plane runs through the USB-C centre and cuvette mouth: NO slides / lifters in any tool.",
+        "3. Parting plane runs through the USB-C centre and the strip-tray mouth: NO slides / lifters in any tool.",
+        "3a. SINGLE BUTTON. Strip goes in a slide-in tray (HS-106): load strip outside, push tray home (hard stop",
+        "   + detent click); the tray end stop and the read aperture are on the same black part (HS-105).",
         "4. Housing closure: rim lap joint + 4 x PT K25x16 from the rear. Top two screws pass through the",
         "   PCB top holes (PCB NOT clamped: 0.30 hold-down gap). Bottom PCB holes: 2 x PT K25x6.",
         "5. White ABS is translucent: the optical path is enclosed in the BLACK optical block (HS-105).",
         "6. Tolerances: general per sheet 6; critical fits and 15 stack-ups on sheet 6.",
         "7. Colour variants (teal / grey / purple ...) come from the printed overlay only - one set of tools.",
         "8. OPEN ITEMS: confirm PCB component heights (<= 3.0 below, TFT FPC route), USB-C overhang 3.0 mm",
-        "   past PCB edge, tact switch at (0, -8), cuvette 14.0 x 3.0 x L, LiPo 503035 wiring.",
+        "   past PCB edge, tact switch at (0, -8), Hb STRIP SIZE (6.0 x 30 x 0.5 assumed), LiPo 503035 wiring.",
     ], fs=5.3, lh=3.4)
     S.save(pdf)
 
@@ -134,7 +138,7 @@ def sheet_front(pdf):
     S.dim(ps((0, -61, H.Z_FRONT_IN)), ps((0, -61, H.T)), -5, "2.00 ±0.05")
     S.leader(ps((0, 10.5, H.T - H.OVL_D - H.LENS_POCKET_D)), 16, -2, f"lens pocket {f2(H.LENS_POCKET_D)} ±0.05 deep\noverlay recess {f2(H.OVL_D)} ±0.03")
     S.leader(ps((0, H.HOLE_Y_TOP, H.Z_PCB_TOP + H.PCB_HOLD_GAP)), 26, 0, f"top boss end {H.ZP - H.Z_PCB_TOP - H.PCB_HOLD_GAP:.2f} ±0.05 below P/L")
-    S.leader(ps((0, -58.5, H.ZP)), 26, 4, "cuvette mouth (upper half)\nstadium, lead-in to throat")
+    S.leader(ps((0, -58.5, H.ZP)), 26, 4, "strip-tray mouth (upper half)\nstadium, lead-in to throat")
     S.text(186, 92, "Datum A = P/L face (z 14.2)", fs=5.6, color=K.DIM)
     # tables
     rows = [["Feature", "Nominal", "Tol.", "Steel-safe"]] + [[c[1], c[2], f"{c[3]} / {c[4]}", c[6]] for c in TS.CRITICAL if c[0] in ("Front", "Front/Rear")]
@@ -199,7 +203,7 @@ def sheet_rear(pdf):
         "1. Material ABS natural white, shrink 0.5 %. Wall 2.00; floor 2.00; door ledge 0.75 (reinforced by rails).",
         "2. Draft as HS-101 (modelled). Tongue 1° both faces. Recesses 1°. Pins/holes 0.25-1°.",
         "3. PCB located by crush ribs (+/-0.05) and 2 PT K25x6 at the bottom holes; top holes carry the housing screws.",
-        "4. USB-C and cuvette mouth split on the P/L: half in each housing, no side action.",
+        "4. USB-C and strip-tray mouth split on the P/L: half in each housing, no side action.",
         "5. Gate: 1 x sub gate dia 1.2 into inner +X wall at y = +20 (hidden). Ejection: sleeves on all bosses.",
         "6. No sink opposite bosses / rails on the rear skin (bosses cored, gussets 1.0 thk).",
         "7. Label recess and foot recesses: keep texture-free (SPI B-2) for adhesion.",
@@ -251,17 +255,69 @@ def sheet_small(pdf):
         "HS-105 optical block: ABS BLACK, opaque at 2 mm",
         "  (transmission < 0.1 % @ 400-700 nm - verify).",
         "  Groove Ra <= 0.8 (SPI B-1) to avoid scratching",
-        "  the cuvette optical window. Parting at underside.",
+        "  the strip tray. Parting at underside.",
         "  Add 0.5 x 45° lead-in at groove entry (T1).",
         "All: draft 1° modelled on every wall.",
     ], fs=5.3, lh=3.4)
     S.save(pdf)
 
 
-# ================================================================== sheet 5: lens + overlay
+# ================================================================== sheet 5: strip tray
+def sheet_tray(pdf):
+    S = K.Sheet("STRIP TRAY (SLIDE-IN, SINGLE-POSITION)", "HS-106", "Strip tray", ABS_BLK, "2:1", 5, N,
+                finish="SPI B-1 sliding faces", mass=mass("tray"))
+    Tr = P["tray"]
+    yc = (H.HANDLE_Y0 - H.HANDLE_L + H.TRAY_Y1) / 2
+    pt = S.view(Tr, "front", *S.anchor("front", 60, 160, 2.0, (0, yc, 0)), 2.0, label="TOP (strip side)")
+    pu = S.view(Tr, "back", *S.anchor("back", 140, 160, 2.0, (0, yc, 0)), 2.0, label="UNDERSIDE")
+    ps = S.section(Tr, "X", 0.0, "+", "left", *S.anchor("left", 205, 160, 2.0, (0, yc, H.ZP)), 2.0, label="SECTION A-A (x = 0)")
+    ox, oy = S.anchor("bottom", 330, 245, 5.0, (0, H.OPT_Y, H.ZP))
+    pd = S.section(Tr, "Y", H.OPT_Y, "+", "bottom", ox, oy, 5.0, clip=(283, 222, 377, 268))
+    S.text(283, 271, f"SECTION D-D at the read axis (y = {H.OPT_Y:.0f}) 5:1", fs=6.2, fontweight="bold")
+    ox, oy = S.anchor("front", 330, 170, 6.0, (H.TRAY_W / 2, H.DET_Y, 0))
+    S.view(Tr, "front", ox, oy, 6.0, clip=(290, 140, 372, 200))
+    S.ax.add_patch(MRect((290, 140), 82, 60, fill=False, lw=0.2 * K.PT, ec="#999"))
+    S.text(290, 202, "DETAIL E - DETENT ARM + BUMP (6:1)", fs=6.2, fontweight="bold")
+    # dims (top view)
+    S.dim(pt((-H.TRAY_W / 2, H.TRAY_Y1, 0)), pt((H.TRAY_W / 2, H.TRAY_Y1, 0)), 6, f"{H.TRAY_W:.2f} 0/-0.05")
+    pw = H.STRIP_W + 2 * H.POCKET_CLR; pl = H.STRIP_L + 2 * H.POCKET_CLR
+    S.dim(pt((-pw / 2, H.POCKET_Y1, 0)), pt((pw / 2, H.POCKET_Y1, 0)), 16, f"pocket {pw:.2f} +0.05/0")
+    S.dim(pt((-H.TRAY_W / 2 - 1, H.POCKET_Y1 - pl, 0)), pt((-H.TRAY_W / 2 - 1, H.POCKET_Y1, 0)), -6, f"{pl:.2f} +0.10/0", orient="v")
+    S.dim(pt((H.TRAY_W / 2 + 1, H.OPT_Y, 0)), pt((H.TRAY_W / 2 + 1, H.TRAY_Y1 + H.TRAY_PREGAP, 0)), 4, f"{H.TRAY_Y1 + H.TRAY_PREGAP - H.OPT_Y:.2f} ±0.05 (read axis)", orient="v")
+    S.dim(pt((-H.HANDLE_W / 2, H.HANDLE_Y0 - H.HANDLE_L, 0)), pt((H.HANDLE_W / 2, H.HANDLE_Y0 - H.HANDLE_L, 0)), -6, f"handle {H.HANDLE_W:.1f}")
+    S.leader(pt((0, H.OPT_Y, 0)), 30, 22, f"read aperture dia 2.40 (min, at P/L)\nblock aperture dia 2.00 is the optical stop")
+    S.leader(pt((0, H.POCKET_Y1 - pl - 1.5, 0)), 32, -8, "tweezer / finger notch")
+    S.leader(pt((H.HANDLE_W / 2 - 3, H.HANDLE_Y0 + 0.7, 0)), 18, -16, f"light-seal plug, {H.PLUG_GAP:.1f} radial gap in the mouth funnel")
+    # section dims
+    S.dim(ps((0, H.TRAY_Y1, H.TRAY_Z0)), ps((0, H.TRAY_Y1, H.TRAY_Z0 + H.TRAY_T)), 6, f"{H.TRAY_T:.2f} 0/-0.05")
+    S.leader(ps((0, -45, H.TRAY_Z0 + H.TRAY_T - 0.3)), 22, 10, f"pocket depth {H.STRIP_T + H.POCKET_CLR:.2f} ±0.03")
+    S.leader(ps((0, H.HANDLE_Y0 - 4, H.ZP + H.HANDLE_H / 2)), 22, -6, f"handle {H.HANDLE_H:.1f} x {H.HANDLE_L:.1f}, grip ribs")
+    S.notes(250, 125, [
+        "HOW IT WORKS (single-button meter)",
+        " 1. Pull the tray out by the handle.",
+        " 2. Drop the strip into the pocket, read window down, pushed",
+        "    against the front wall (pocket locates it to +/-0.05).",
+        " 3. Slide the tray in: it rides on the black optical block,",
+        "    hits the end stop and CLICKS (detent bump into notch).",
+        "    The detent sits 0.15 up the ramp -> it pushes the tray",
+        "    onto the stop, so the strip position is set by the stop.",
+        " 4. The handle plug closes the mouth (light seal).",
+        " 5. Press the one button -> measure. Tray lift <= 0.4,",
+        "    lateral <= 0.15, axial window error <= 0.3 (stacks 15-22).",
+        "STRIP SIZE IS ASSUMED 6.0 x 30 x 0.5 - one parameter each.",
+    ], fs=5.3, lh=3.4, title="NOTES")
+    S.notes(14, 70, [
+        f"ABS black, 1° draft both ways from the P/L (z {H.ZP}), parting through the handle centre like the housings.",
+        "Detent arm 1.1 x 13 mm, bump 0.45 / notch 0.40: strain 0.4 % (ABS ~2.5 %) -> many thousand cycles.",
+        "Core-outs under the pocket walls keep walls ~1.1 (no sink on the sliding faces).",
+    ], fs=5.2, lh=3.3, title="MOULDING")
+    S.save(pdf)
+
+
+# ================================================================== sheet 6: lens + overlay
 def sheet_flat(pdf):
     S = K.Sheet("DISPLAY LENS / GRAPHIC OVERLAY", "HS-201/202", "Flat bought-in parts",
-                "201: PMMA 0.8 HC | 202: PC 0.175 + adhesive", "1:1", 5, N)
+                "201: PMMA 0.8 HC | 202: PC 0.175 + adhesive", "1:1", 6, N)
     Ln = P["lens"]; Ov = P["overlay"]
     ox, oy = S.anchor("front", 70, 180, 2.0, (0, H.WIN_YC, 0))
     pl = S.view(Ln, "front", ox, oy, 2.0, label="HS-201 LENS 2:1")
@@ -295,7 +351,7 @@ def sheet_flat(pdf):
 
 # ================================================================== sheet 6: tolerances
 def sheet_tol(pdf):
-    S = K.Sheet("TOLERANCES, FITS & STACK-UP ANALYSIS", "HS-110", "All moulded parts", "ABS", "-", 6, N)
+    S = K.Sheet("TOLERANCES, FITS & STACK-UP ANALYSIS", "HS-110", "All moulded parts", "ABS", "-", 7, N)
     rows = [["Size range (mm)", "Tool-bound (single half)", "Across P/L / not tool-bound"]] + [list(r) for r in TS.GENERAL_TOL]
     S.table(14, 282, [30, 38, 44], rows, fs=5.4, row_h=4.4, title="GENERAL TOLERANCES - ABS (unless stated)")
     S.notes(14, 252, [
@@ -330,7 +386,8 @@ def sheet_tol(pdf):
         " USB-C receptacle 8.94 x 3.26 shell, top-mount, centre 1.63 above PCB.",
         " TFT 1.8in ST7735: glass 34.00 x 45.83 ±0.10, active area offset",
         "  2.0 towards the FPC-free end (confirm module drawing).",
-        " Cuvette 14.00 ±0.05 x 3.00 ±0.05 (confirm drawing).",
+        " Hb strip 6.00 ±0.05 x 30.0 x 0.50 ±0.03, read window 13.95 ±0.2",
+        "  from the front edge (ASSUMED - confirm strip drawing).",
         "",
         "LATCH STRAIN (HS-103): e = 1.5 t d / L^2, t 0.8, L 6.3:",
         " nominal d 0.5 -> 1.5 %; max d 0.75 -> 2.3 % (ABS limit ~2.5 %).",
@@ -379,7 +436,7 @@ def mould_data_table(S, x, y, name, rows):
 # ================================================================== sheet 7: Tool A layout
 def sheet_toolA(pdf):
     S = K.Sheet("MOULD TOOL A (FAMILY 1+1+1): LAYOUT & FEED", "HS-301", "Tool A: front + rear + door",
-                "Inserts 1.2311 (P20) 30-34 HRC or 1.2738", "1:2", 7, N)
+                "Inserts 1.2311 (P20) 30-34 HRC or 1.2738", "1:2", 8, N)
     s = 0.5
     cx0, cy0 = 150, 160
     # mould base 350 x 400 and insert pockets
@@ -454,8 +511,8 @@ def sheet_toolA(pdf):
         "1. Insert STEP files (steel size, shrink applied):",
         "   mold/HemoSure_{Front,Rear}_Housing_{CORE,CAVITY}.step,",
         "   mold/HemoSure_Battery_Door_{CORE,CAVITY}.step.",
-        "2. Core/cavity split verified in CAD: 0 mm³ undercut,",
-        "   0 mm³ steel/part collision on ejection (sheet 10).",
+        "2. Core/cavity split verified in CAD by ray casting:",
+        "   0 undercut rays, 0 out-of-order steel (sheet 11).",
         "3. Ejector positions are proposals from an automatic",
         "   footprint check - toolmaker to finalise with the",
         "   cooling layout. Sleeves under every screw boss.",
@@ -474,7 +531,7 @@ def sheet_toolA(pdf):
 # ================================================================== sheet 8: Tool A insert sections
 def sheet_toolA_sections(pdf):
     S = K.Sheet("MOULD TOOL A: CORE / CAVITY SECTIONS", "HS-302", "Tool A inserts",
-                "1.2311 / 1.2738", "1:1", 8, N)
+                "1.2311 / 1.2738", "1:1", 9, N)
     sys.path.insert(0, str(ROOT / "mold"))
     import hemosure_mold as HM
     y0 = 200
@@ -491,7 +548,7 @@ def sheet_toolA_sections(pdf):
         S.text(cx - 40, 273, "Section x = 0 at 0.8:1; mould opens along Z (horizontal on this sheet)", fs=5.0)
         m = MOLD.get(name, {})
         S.text(cx - 40, 100, f"core bbox {m.get('core_bbox')}  cavity bbox {m.get('cavity_bbox')} (mm)", fs=5.0)
-        S.text(cx - 40, 96, f"undercut {m.get('undercut_volume_mm3')} mm³ | core collision {m.get('core_collision_mm3')} | cavity collision {m.get('cavity_collision_mm3')}", fs=5.0)
+        S.text(cx - 40, 96, f"rays {m.get('ray_columns')} | undercut rays {m.get('undercut_columns')} | out-of-order steel {m.get('insert_wrong_order_columns')}", fs=5.0)
     S.notes(14, 88, [
         "1. Inserts are the full block less the part (x 1.005). Toolmaker adds: pocket fits (H7/g6 to the plates), locks / taper",
         "   interlocks (4 x 5° side locks per insert), ejector & sleeve holes, cooling drillings, vents, sprue/runner/gates.",
@@ -505,40 +562,43 @@ def sheet_toolA_sections(pdf):
 
 # ================================================================== sheet 9: Tool B
 def sheet_toolB(pdf):
-    S = K.Sheet("MOULD TOOL B (1+1, BLACK ABS)", "HS-303", "Tool B: button + optical block",
-                "Inserts 1.2311 P20 / cavity 1.2083 for polish", "2:1", 9, N)
+    S = K.Sheet("MOULD TOOL B (1+1+1, BLACK ABS)", "HS-303", "Tool B: button + optical block + tray",
+                "Inserts 1.2311 P20 / cavity 1.2083 for polish", "2:1", 10, N)
     sys.path.insert(0, str(ROOT / "mold"))
     import hemosure_mold as HM
     from build123d import scale
     for i, (name, ax, val, view, anc, sc) in enumerate([
-            ("Optical_Block", "Y", H.OPT_Y, "bottom", (0, H.OPT_Y, 11.0), 1.6),
-            ("Button_Cap", "X", 0.0, "left", (0, H.BTN_Y, 20), 3.0)]):
+            ("Optical_Block", "Y", H.OPT_Y, "bottom", (0, H.OPT_Y, 11.0), 1.4),
+            ("Button_Cap", "X", 0.0, "left", (0, H.BTN_Y, 20), 2.5),
+            ("Strip_Tray", "Y", H.OPT_Y, "bottom", (0, H.OPT_Y, H.ZP), 2.0)]):
         core, cav, rep = HM.build(name, check=False)
-        cx = 95 + i * 140
+        cx = 70 + i * 125
         ox, oy = S.anchor(view, cx, 185, sc, anc)
-        clip = (cx - 70, 110, cx + 70, 265)
+        clip = (cx - 58, 110, cx + 58, 265)
         S.section(core, ax, val, "+", view, ox, oy, sc, hatch="////", color="#345", clip=clip)
         S.section(cav, ax, val, "+", view, ox, oy, sc, hatch="\\\\\\\\", color="#753", clip=clip)
         pr = HM.BUILDERS[name]()[0]
         S.section(scale(pr, by=HM.K), ax, val, "+", view, ox, oy, sc, hatch="", fc="#f5c542", color="#a70", clip=clip)
-        S.text(cx - 70, 270, f"{name.replace('_', ' ').upper()} - core / cavity section ({sc}:1)", fs=6.2, fontweight="bold")
+        S.text(cx - 58, 270, f"{name.replace('_', ' ').upper()} - core / cavity ({sc}:1)", fs=6.2, fontweight="bold")
         m = MOLD.get(name, {})
-        S.text(cx - 70, 104, f"undercut {m.get('undercut_volume_mm3')} mm³ | collisions {m.get('core_collision_mm3')} / {m.get('cavity_collision_mm3')} mm³", fs=5.0)
+        S.text(cx - 58, 104, f"rays {m.get('ray_columns')} | undercut {m.get('undercut_columns')} | out-of-order {m.get('insert_wrong_order_columns')}", fs=5.0)
     rows = [
-        ["Cavities", "1 x button + 1 x optical block, black ABS"],
-        ["Parting", "Button: flange underside. Block: underside"],
+        ["Cavities", "button + optical block + strip tray, black ABS"],
+        ["Parting", "Button: flange u/s. Block: u/s. Tray: P/L z 14.2"],
         ["Shrink", "0.50 % (in insert STEP)"],
         ["Feed", "Sub gate dia 0.8 (button, on stem side),"],
         ["", "sub gate dia 1.0 (block, on ear underside)"],
         ["Ejection", "Button: sleeve on stem; block: 4 pins on ears"],
         ["", "+ 2 pins on the end walls"],
-        ["Polish", "Groove + floor SPI B-1 (cuvette contact)"],
+        ["Polish", "Groove, tray faces SPI B-1 (sliding)"],
         ["Proj. area", "~7.5 cm² -> 30-50 t press"],
-        ["Shot", f"{(P['button'].volume+P['optical'].volume)*RHO:.1f} g parts + ~2 g runner"],
+        ["", "tray: sub gate dia 1.0 on the handle underside"],
+        ["Shot", f"{(P['button'].volume+P['optical'].volume+P['tray'].volume)*RHO:.1f} g parts + ~3 g runner"],
     ]
-    mould_data_table(S, 262, 102, "Tool B data", rows)
+    mould_data_table(S, 262, 112, "Tool B data", rows[:-2] + [["Feed (tray)", rows[-2][1]], rows[-1]])
     S.notes(14, 96, [
-        "1. Both parts black -> one family tool; if the button must be another colour, split to its own 1-cavity tool.",
+        "1. All three parts black -> one family tool; if the button must be another colour, split it to its own 1-cavity tool.",
+        "1a. Tray + block are a matched pair: T1 fit check = tray slides with <= 2 N, clicks home, no rattle > 0.15 mm.",
         "2. Optical block groove is the optical-path datum: hold 14.30 +0.05/0 and floor 1.50 ±0.05.",
         "3. Heat-stake pins dia 1.2: vent the pin tips (0.01) to avoid short shots.",
         "4. Verify opacity on T1 parts: no visible light through 2 mm with a torch in a dark room; spectrometer < 0.1 %.",
@@ -549,24 +609,24 @@ def sheet_toolB(pdf):
 # ================================================================== sheet 10: DFM report
 def sheet_dfm(pdf):
     import dfm_checks as D
-    S = K.Sheet("DFM VERIFICATION & MOULDING SPECIFICATION", "HS-310", "All moulded parts", "ABS", "-", 10, N)
-    rows = [["Part", "Vol. cm³", "Mass g", "Undercut mm³", "Core coll.", "Cav. coll.", "Faces < 0.2° draft (>1 mm tall)", "Parting z"]]
+    S = K.Sheet("DFM VERIFICATION & MOULDING SPECIFICATION", "HS-310", "All moulded parts", "ABS", "-", 11, N)
+    rows = [["Part", "Vol. cm³", "Mass g", "Rays cast", "Undercut rays", "Steel out-of-order", "Faces < 0.2° draft (>1 mm)", "Parting z"]]
     fns = {"Rear_Housing": ("rear", H.build_rear), "Front_Housing": ("front", H.build_front), "Battery_Door": ("door", H.build_door),
-           "Button_Cap": ("button", H.build_button), "Optical_Block": ("optical", H.build_optical_block)}
+           "Button_Cap": ("button", H.build_button), "Optical_Block": ("optical", H.build_optical_block), "Strip_Tray": ("tray", H.build_tray)}
     for name, (k, fn) in fns.items():
         m = MOLD.get(name, {})
         nd = len(D.draft_report(P[k]))
-        rows.append([name.replace("_", " "), f"{P[k].volume/1000:.2f}", f"{P[k].volume*RHO:.1f}", str(m.get("undercut_volume_mm3")),
-                     str(m.get("core_collision_mm3")), str(m.get("cavity_collision_mm3")), str(nd), str(m.get("parting_z_mm"))])
+        rows.append([name.replace("_", " "), f"{P[k].volume/1000:.2f}", f"{P[k].volume*RHO:.1f}", str(m.get("ray_columns")),
+                     str(m.get("undercut_columns")), str(m.get("insert_wrong_order_columns")), str(nd), str(m.get("parting_z_mm"))])
     S.table(14, 282, [34, 18, 16, 24, 20, 20, 48, 18], rows, fs=5.2, row_h=4.4, title="AUTOMATED CAD CHECKS (this revision)")
     inter = MOLD.get("_interferences", [])
-    S.text(14, 250, f"Assembly interference check, all part pairs incl. PCB/TFT/USB-C/tact/LiPo/cuvette/LED board: {'NONE' if not inter else inter}", fs=5.6)
+    S.text(14, 250, f"Assembly interference check, all part pairs incl. PCB/TFT/USB-C/tact/LiPo/strip/tray/LED board: {inter or 'NONE'} (optical x tray = designed 0.05 detent preload)", fs=5.6)
     S.notes(14, 242, [
         "How the checks work (hemosure_casing.py + mold_tools.py, re-run on every change):",
-        " - Undercut: steel that is blocked from BOTH the core and the cavity direction (sweep of the part along +Z and -Z).",
-        " - Collision: core insert intersected with the part swept along the core opening direction (and same for the cavity).",
+        " - Undercut: vertical rays on a 0.25 mm grid; any ray crossing the part in 2+ intervals = trapped steel (validated on a test part).",
+        " - Inserts: rays through core, cavity and part; order bottom->top must be one steel half, part, other half (no interlock).",
         " - Draft: every face's angle to the draw axis; faces taller than 1 mm with < 0.2° are listed (target: none).",
-        " - Stack-ups: 15 worst-case + RSS stacks, sheet 6. All pass worst case at this revision.",
+        " - Stack-ups: 22 worst-case + RSS stacks, sheet 7. All pass worst case at this revision.",
     ], fs=5.2, lh=3.3, title="METHOD")
     S.notes(14, 212, [
         "Wall 2.00 nominal (ABS range 1.2-3.5); thinnest: lens-pocket ledge 0.80, door ledge 0.75, lap skirt 1.00.",
@@ -585,7 +645,7 @@ def sheet_dfm(pdf):
         " 4. Assemble with a real PCB + TFT + LiPo: USB-C plug insertion,",
         "    button click (no pre-press, 0.25 travel), door open/close x 50.",
         " 5. Drop test 1.0 m x 6 faces (IEC 61010-1 / 60068-2-31 style).",
-        " 6. Light-leak test of the optical cell with the cuvette inserted.",
+        " 6. Light-leak test of the optical cell with the strip tray inserted.",
         " 7. Disinfectant wipe x 500 (70 % IPA, 0.5 % NaOCl): no ESC cracks",
         "    at bosses (if cracking: switch to PC/ABS, shrink 0.5-0.7 %).",
         " 8. Then texture the cavities (VDI 24) and re-check P/L step.",
@@ -597,7 +657,7 @@ def sheet_dfm(pdf):
     S.notes(14, 128, [
         "Files (all regenerated from cad/hemosure_casing.py - change a parameter, re-run, everything updates):",
         " cad/HemoSure_*.step (parts + assembly)   mold/HemoSure_*_{CORE,CAVITY}.step (steel size)   drawings/*.pdf",
-        " cad/tolerance_stack.py (stacks)   cad/dfm_checks.py (draft)   mold/mold_check_report.json (undercut / collision)",
+        " cad/tolerance_stack.py (stacks)   cad/dfm_checks.py (draft)   mold/mold_check_report.json (ray undercut / insert order)",
     ], fs=5.2, lh=3.3, title="DATA PACKAGE")
     S.save(pdf)
 
@@ -605,7 +665,7 @@ def sheet_dfm(pdf):
 if __name__ == "__main__":
     OUT.parent.mkdir(exist_ok=True)
     only = sys.argv[1:]
-    fns = [sheet_ga, sheet_front, sheet_rear, sheet_small, sheet_flat, sheet_tol, sheet_toolA, sheet_toolA_sections, sheet_toolB, sheet_dfm]
+    fns = [sheet_ga, sheet_front, sheet_rear, sheet_small, sheet_tray, sheet_flat, sheet_tol, sheet_toolA, sheet_toolA_sections, sheet_toolB, sheet_dfm]
     out = OUT if not only else OUT.with_name(OUT.stem + "_preview.pdf")
     with PdfPages(out) as pdf:
         for i, f in enumerate(fns, 1):

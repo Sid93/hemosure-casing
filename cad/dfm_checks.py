@@ -20,7 +20,7 @@ def draft_report(P, min_draft=0.2, min_height=1.0):
 
 
 if __name__ == "__main__":
-    for n, fn in [("rear", H.build_rear), ("front", H.build_front), ("door", H.build_door), ("button", H.build_button), ("optical", H.build_optical_block)]:
+    for n, fn in [("rear", H.build_rear), ("front", H.build_front), ("door", H.build_door), ("button", H.build_button), ("optical", H.build_optical_block), ("tray", H.build_tray)]:
         b = draft_report(fn())
         print(n, len(b))
         for r in b[:40]:

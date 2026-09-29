@@ -12,10 +12,21 @@ BIG = 80.0
 SKIPPED = []
 
 
-def _prisms(P, d):
+def _prisms(P, d, zp=None):
     d = Vector(*d)
     out = []
-    for f in P.faces():
+    faces = P.faces()
+    if zp is not None:   # split at the parting plane so no face straddles it (mixed normals)
+        from build123d import Plane, Keep
+        halves = P.split(Plane.XY.offset(zp), keep=Keep.BOTH)
+        if isinstance(halves, tuple):
+            halves = [h for h in halves if h is not None]
+            allf = [f for h in halves for f in h.faces()]
+        else:
+            allf = halves.faces()
+        faces = [f for f in allf
+                 if not (f.geom_type.name == "PLANE" and abs(f.center().Z - zp) < 1e-6 and abs(f.normal_at().Z) > 0.999)]
+    for f in faces:
         try:
             n = f.normal_at()
         except Exception:
@@ -28,8 +39,8 @@ def _prisms(P, d):
     return out
 
 
-def sweep(P, d):
-    pr = _prisms(P, d)
+def sweep(P, d, zp=None):
+    pr = _prisms(P, d, zp)
     res = P
     SKIPPED.clear()
     for i in range(0, len(pr), 40):          # fuse in chunks; fall back one-by-one if OCC balks
@@ -40,7 +51,10 @@ def sweep(P, d):
                 try:
                     res = res.fuse(q)
                 except Exception:
-                    SKIPPED.append(q)
+                    try:
+                        res = res.fuse(q, tol=1e-3)       # fuzzy boolean fallback
+                    except Exception:
+                        SKIPPED.append(q)
     return res.clean() if not SKIPPED else res
 
 
@@ -66,8 +80,8 @@ def split_by_sweep(P, B, zp, cavity_dir):
     return core, cavity, vol(undercut)
 
 
-def verify(P, core, cavity, cavity_dir):
+def verify(P, core, cavity, cavity_dir, zp=None):
     """Volume of core/cavity steel that would collide with the part on ejection (should be ~0)."""
-    core_hit = core & sweep(P, (0, 0, cavity_dir))      # core withdraws -cavity_dir
-    cav_hit = cavity & sweep(P, (0, 0, -cavity_dir))
+    core_hit = core & sweep(P, (0, 0, cavity_dir), zp)      # core withdraws -cavity_dir
+    cav_hit = cavity & sweep(P, (0, 0, -cavity_dir), zp)
     return vol(core_hit), vol(cav_hit)

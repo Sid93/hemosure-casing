@@ -1,16 +1,25 @@
 {
- "_interferences": [],
+ "_interferences": [
+  [
+   "optical",
+   "tray",
+   0.022
+  ]
+ ],
+ "_interference_note": "optical x tray = designed detent preload (bump rides 0.05 up the notch ramp)",
  "Rear_Housing": {
   "part": "Rear_Housing",
   "part_volume_mm3": 21249.1,
   "parting_z_mm": 14.2,
   "cavity_withdraws": "-Z",
   "shrink_scale": 1.005,
-  "core_collision_mm3": 0,
-  "cavity_collision_mm3": 0,
+  "ray_columns": 98882,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
   "closure_error_mm3": 0.0,
-  "undercut_volume_mm3": 0,
-  "sweep_prisms_skipped": 0,
   "core_solids": 1,
   "cavity_solids": 1,
   "core_bbox": [
@@ -23,7 +32,7 @@
    180.9,
    39.4
   ],
-  "secs": 52.4
+  "secs": 35.6
  },
  "Front_Housing": {
   "part": "Front_Housing",
@@ -31,11 +40,13 @@
   "parting_z_mm": 14.2,
   "cavity_withdraws": "+Z",
   "shrink_scale": 1.005,
-  "core_collision_mm3": 0,
-  "cavity_collision_mm3": 0,
+  "ray_columns": 100140,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
   "closure_error_mm3": 0.0,
-  "undercut_volume_mm3": 0,
-  "sweep_prisms_skipped": 0,
   "core_solids": 1,
   "cavity_solids": 1,
   "core_bbox": [
@@ -48,7 +59,7 @@
    180.9,
    33.0
   ],
-  "secs": 41.6
+  "secs": 22.9
  },
  "Battery_Door": {
   "part": "Battery_Door",
@@ -56,11 +67,13 @@
   "parting_z_mm": 1.2,
   "cavity_withdraws": "-Z",
   "shrink_scale": 1.005,
-  "core_collision_mm3": 0,
-  "cavity_collision_mm3": 0,
+  "ray_columns": 26150,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
   "closure_error_mm3": 0.0,
-  "undercut_volume_mm3": 0,
-  "sweep_prisms_skipped": 0,
   "core_solids": 1,
   "cavity_solids": 1,
   "core_bbox": [
@@ -73,7 +86,7 @@
    80.4,
    22.2
   ],
-  "secs": 46.7
+  "secs": 14.8
  },
  "Button_Cap": {
   "part": "Button_Cap",
@@ -81,11 +94,13 @@
   "parting_z_mm": 18.8,
   "cavity_withdraws": "+Z",
   "shrink_scale": 1.005,
-  "core_collision_mm3": 0,
-  "cavity_collision_mm3": 0,
+  "ray_columns": 2117,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
   "closure_error_mm3": 0.0,
-  "undercut_volume_mm3": 0,
-  "sweep_prisms_skipped": 0,
   "core_solids": 1,
   "cavity_solids": 1,
   "core_bbox": [
@@ -98,19 +113,21 @@
    40.2,
    23.3
   ],
-  "secs": 0.7
+  "secs": 5.9
  },
  "Optical_Block": {
   "part": "Optical_Block",
-  "part_volume_mm3": 2013.3,
+  "part_volume_mm3": 2011.3,
   "parting_z_mm": 7.0,
   "cavity_withdraws": "-Z",
   "shrink_scale": 1.005,
-  "core_collision_mm3": 0.0002,
-  "cavity_collision_mm3": 0,
+  "ray_columns": 10809,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
   "closure_error_mm3": 0.0,
-  "undercut_volume_mm3": 0.0002,
-  "sweep_prisms_skipped": 0,
   "core_solids": 1,
   "cavity_solids": 1,
   "core_bbox": [
@@ -123,6 +140,33 @@
    67.3,
    25.7
   ],
-  "secs": 26.6
+  "secs": 12.2
+ },
+ "Strip_Tray": {
+  "part": "Strip_Tray",
+  "part_volume_mm3": 2983.3,
+  "parting_z_mm": 14.2,
+  "cavity_withdraws": "-Z",
+  "shrink_scale": 1.005,
+  "ray_columns": 11573,
+  "undercut_columns": 0,
+  "open_rays": 0,
+  "insert_wrong_order_columns": 0,
+  "core_split_columns": 0,
+  "cavity_split_columns": 0,
+  "closure_error_mm3": 0.0,
+  "core_solids": 1,
+  "cavity_solids": 1,
+  "core_bbox": [
+   60.3,
+   70.4,
+   22.1
+  ],
+  "cavity_bbox": [
+   60.3,
+   70.4,
+   22.1
+  ],
+  "secs": 6.4
  }
 }

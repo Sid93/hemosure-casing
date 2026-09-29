@@ -11,6 +11,7 @@ sys.path.insert(0, str(HERE.parent / "cad"))
 from build123d import scale, Color
 import hemosure_casing as H
 import mold_tools as M
+import ray_check as RC
 
 K = 1 + H.SHRINK_ABS
 
@@ -64,9 +65,19 @@ def optical_inserts():
     return P, core, cavity, -1, H.OB_Z0
 
 
+def tray_inserts():
+    """Flat parting at ZP: every void below ZP opens downward, every void above opens upward
+    (verified by ray_check), so a plain half-space split is exact."""
+    P = H.build_tray()
+    B = H.box(-30, 30, -85, -15, H.ZP - 22, H.ZP + 22)
+    cavity = (B & H.half_space(-300, H.ZP)) - P
+    core = (B & H.half_space(H.ZP, 300)) - P
+    return P, core, cavity, -1, H.ZP
+
+
 BUILDERS = {"Rear_Housing": rear_inserts, "Front_Housing": front_inserts,
             "Battery_Door": door_inserts, "Button_Cap": button_inserts,
-            "Optical_Block": optical_inserts}
+            "Optical_Block": optical_inserts, "Strip_Tray": tray_inserts}
 
 
 def build(name, check=True):
@@ -74,9 +85,15 @@ def build(name, check=True):
     rep = {"part": name, "part_volume_mm3": round(P.volume, 1), "parting_z_mm": zp,
            "cavity_withdraws": "-Z" if cdir < 0 else "+Z", "shrink_scale": K}
     if check:
-        ch, vh = M.verify(P, core, cavity, cdir)
-        rep["core_collision_mm3"] = round(ch, 4)
-        rep["cavity_collision_mm3"] = round(vh, 4)
+        pc, _ = RC.part_check(P)
+        bottom, top = (cavity, core) if cdir < 0 else (core, cavity)   # insert_check wants bottom-half steel first
+        ic = RC.insert_check(P, top, bottom)
+        rep["ray_columns"] = pc["columns"]
+        rep["undercut_columns"] = pc["undercut_columns"]
+        rep["open_rays"] = pc["open_rays"]
+        rep["insert_wrong_order_columns"] = ic["wrong_order"]
+        rep["core_split_columns"] = ic["core_split_columns"]
+        rep["cavity_split_columns"] = ic["cavity_split_columns"]
         B = core + cavity + P
         rep["closure_error_mm3"] = round(abs(B.volume - core.volume - cavity.volume - P.volume), 3)
     core_s, cav_s = scale(core, by=K), scale(cavity, by=K)

@@ -89,9 +89,35 @@ def stacks():
         ("(hole - screw) / 2", (H.PCB_HOLE_D - 2.5) / 2, 0.05), ("PCB float", 0.0, 0.15),
         ("hole position on PCB", 0.0, 0.10), ("boss position", 0.0, 0.05)],
         0.0, None, "Screw must pass without loading the PCB sideways."))
-    S.append(stack("Cuvette lateral clearance in the groove (per side)", [
-        ("groove width / 2", H.CH_W / 2, 0.025), ("cuvette width / 2", -H.CUV_W / 2, 0.025)],
-        0.05, 0.25, "Confirm the cuvette drawing: this assumes 14.00 +/-0.05."))
+    S.append(stack("Strip tray lateral clearance in the groove (per side)", [
+        ("groove width / 2", H.CH_W / 2, 0.025), ("tray width / 2", -H.TRAY_W / 2, 0.025)],
+        0.03, 0.2, "Tray slides freely but cannot wander: +/-0.15 max lateral float."))
+    S.append(stack("Strip tray vertical clearance under the LED board", [
+        ("groove depth (floor to block top)", +H.CH_H, 0.05), ("tray thickness", -H.TRAY_T, 0.05)],
+        0.05, 0.35, "Tray cannot tilt more than ~0.3 mm over its 34 mm length."))
+    S.append(stack("Strip lateral clearance in the tray pocket (per side)", [
+        ("pocket width / 2", H.STRIP_W / 2 + H.POCKET_CLR, 0.025), ("strip width / 2", -H.STRIP_W / 2, 0.025)],
+        0.0, 0.12, "Strip is located by the pocket; confirm strip width tolerance (assumed +/-0.05)."))
+    S.append(stack("Strip lift: strip top to LED board (strip trapped vertically)", [
+        ("tray vertical clearance", +(H.CH_H - H.TRAY_T), 0.10), ("pocket depth", +(H.STRIP_T + H.POCKET_CLR), 0.03),
+        ("strip thickness", -H.STRIP_T, 0.03)],
+        0.05, 0.5, "Strip can never touch the LED board and can lift at most ~0.4 mm."))
+    S.append(stack("Read window vs optical axis (axial offset)", [
+        ("tray front face on the end stop (detent preload)", 0.0, 0.0),
+        ("end stop to aperture (same part, HS-105)", 0.0, 0.05),
+        ("tray front face to pocket wall", 0.0, 0.05),
+        ("strip: front edge to read-window centre", 0.0, 0.20)],
+        -0.5, 0.5, "Block float on its screws does NOT enter: stop and aperture are on the same part. Read pad must be >= 2.0 + 2 x 0.3 = 2.6 mm."))
+    S.append(stack("Detent engagement (bump past the groove wall)", [
+        ("bump reach beyond tray side", +0.45, 0.05), ("tray lateral clearance", -(H.CH_W - H.TRAY_W) / 2, 0.05)],
+        0.15, 0.55, "Click is felt; arm strain 1.5 t d / L^2 = 0.4 % at max (ABS limit ~2.5 %)."))
+    S.append(stack("Light-seal plug radial gap in the mouth funnel", [
+        ("plug gap (design)", +H.PLUG_GAP, 0.05), ("funnel profile", 0.0, 0.05), ("tray lateral float", 0.0, 0.15)],
+        0.0, 0.6, "Plug never rubs the funnel; 2-turn labyrinth for ambient light."))
+    S.append(stack("Handle face to housing skin (axial)", [
+        ("design gap", +H.HANDLE_FACE_GAP, 0.0), ("optical block float on screws (Y)", 0.0, 0.2),
+        ("block end stop to housing skin (housing)", 0.0, 0.1), ("tray: front face to handle face", 0.0, 0.1)],
+        0.0, 1.0, "Handle never bottoms on the housing -> the end stop, not the handle, sets strip position."))
     return S
 
 
@@ -122,7 +148,12 @@ CRITICAL = [
     ("Door", "Latch arm t x bump reach", "0.80 x 0.80", "+0.03 / +0.05", "-0.03 / -0.05", "stack 9, strain", "-"),
     ("Button", "Cap dia / flange dia", f"{H.BTN_D:.2f} / {H.BTN_FLANGE_D:.2f}", "0 / +0.05", "-0.05 / -0.05", "stack 4", "cut large"),
     ("Button", "Stem tip to flange top", f"{(H.Z_FRONT_IN - H.BTN_PLAY) - (H.Z_PCB_TOP + H.TACT_H):.2f}", "+0.05", "-0.05", "stack 3", "leave long"),
-    ("Optical", "Cuvette groove width x depth", f"{H.CH_W:.2f} x {H.CH_H:.2f}", "+0.05", "0", "cuvette 14.0 x 3.0 (confirm)", "cut small"),
+    ("Optical", "Tray groove width x depth", f"{H.CH_W:.2f} x {H.CH_H:.2f}", "+0.05", "0", "tray 14.10 x 3.10", "cut small"),
+    ("Optical", "End stop to aperture centre", f"{H.CH_Y_END - H.OPT_Y:.2f}", "+0.05", "-0.05", "strip read position", "-"),
+    ("Tray", "Body width x thickness", f"{H.TRAY_W:.2f} x {H.TRAY_T:.2f}", "0", "-0.05 / -0.05", "tray stacks", "cut large"),
+    ("Tray", "Strip pocket W x L x D", f"{H.STRIP_W + 2*H.POCKET_CLR:.2f} x {H.STRIP_L + 2*H.POCKET_CLR:.2f} x {H.STRIP_T + H.POCKET_CLR:.2f}", "+0.05 / +0.1 / +0.03", "0 / 0 / -0.03", "strip 6.0 x 30 x 0.5 (ASSUMED)", "cut small"),
+    ("Tray", "Front face to pocket wall", f"{H.TRAY_FRONT_WALL:.2f}", "+0.05", "-0.05", "read window position", "-"),
+    ("Tray", "Detent bump reach / notch depth", "0.45 / 0.40", "+/-0.05", "+/-0.05", "click + preload to stop", "-"),
     ("Optical", "Floor under groove / aperture", f"{H.CH_PLATE:.2f} / dia 2.00", "+/-0.05", "+/-0.03", "optical path", "-"),
     ("Optical", "Ear hole pitch", f"{2*H.OB_EAR_X:.2f}", "+0.05", "-0.05", "rear bosses", "-"),
 ]
