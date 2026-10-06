@@ -81,6 +81,9 @@ TRAY_W, TRAY_T = 14.10, 3.10          # tray body: 0.10 / side to the groove, 0.
 TRAY_FRONT_WALL = 1.0                 # tray front face to strip-pocket front wall
 TRAY_PREGAP = 0.05                    # modelled gap to the end stop (detent preloads it closed)
 POCKET_CLR = 0.05                     # strip pocket clearance per side / depth
+STRIP_FACE = "rear"                   # 'rear': pocket on the tray UNDERSIDE, strip read side faces the battery side (Rev C)
+POCKET_RECESS = 0.25                  # rear-facing strip sits this far inside the tray -> never rubs the groove floor
+RET_INTERF = 0.08                     # strip retention crush ribs: interference per side (strip snaps in, stays in)
 HANDLE_W, HANDLE_H, HANDLE_L = 24.0, 8.0, 8.5
 HANDLE_FACE_GAP = 0.5                 # handle face to housing skin (at P/L)
 PLUG_DEPTH, PLUG_GAP = 1.4, 0.3       # light-seal plug into the mouth funnel, radial gap
@@ -499,15 +502,31 @@ def build_tray():
     for y in (HANDLE_Y0 - 2.5, HANDLE_Y0 - 4.5, HANDLE_Y0 - 6.5):
         tray = tray - taper_box(-9, 9, y - 0.4, y + 0.4, ZP + HANDLE_H / 2 - 0.4, ZP + HANDLE_H / 2 + 0.1, g=0.02)
         tray = tray - taper_box(-9, 9, y - 0.4, y + 0.4, ZP - HANDLE_H / 2 + 0.4, ZP - HANDLE_H / 2 - 0.1, g=0.02)
-    # strip pocket (open top)
-    pw, pl, pd = STRIP_W + 2 * POCKET_CLR, STRIP_L + 2 * POCKET_CLR, STRIP_T + POCKET_CLR
-    tray = tray - taper_box(-pw / 2, pw / 2, POCKET_Y1 - pl, POCKET_Y1, z1 - pd, z1 + 0.1, g=(pd + 0.1) * TAN1)
-    # finger / tweezer notch at the pocket's rear end
-    tray = tray - taper_box(-3.5, 3.5, POCKET_Y1 - pl - 3.6, POCKET_Y1 - pl + 2.0, z1 - 1.2, z1 + 0.1, g=0.03)
-    # read aperture through the tray floor (block aperture dia 2.0 is the optical stop)
-    ap = 2.4                                              # dia at the parting plane (narrowest)
-    tray = tray - cone1(0, OPT_Y, z0 - 0.1, ZP + 0.001, ap + 2 * (ZP - z0 + 0.1) * TAN1)
-    tray = tray - cone1(0, OPT_Y, z1 - pd + 0.01, ZP - 0.001, ap + 2 * (z1 - pd + 0.01 - ZP) * TAN1)
+    pw, pl = STRIP_W + 2 * POCKET_CLR, STRIP_L + 2 * POCKET_CLR
+    if STRIP_FACE == "rear":
+        # strip pocket on the UNDERSIDE (open -Z, formed by the cavity), strip recessed POCKET_RECESS
+        pd = STRIP_T + POCKET_RECESS
+        z_pc = z0 + pd                                        # pocket ceiling = strip's back face
+        tray = tray - taper_box(-pw / 2, pw / 2, POCKET_Y1 - pl, POCKET_Y1, z0 - 0.1, z_pc, g=-(pd + 0.1) * TAN1)
+        # retention crush ribs: 2 per long wall, RET_INTERF interference -> strip snaps in, cannot drop out
+        for yr in (POCKET_Y1 - 6.0, POCKET_Y1 - pl + 6.0):
+            for sx in (1, -1):
+                xa, xb = sorted((sx * (pw / 2 + 0.02), sx * (pw / 2 - POCKET_CLR - RET_INTERF)))
+                tray = tray + taper_box(xa, xb, yr - 0.4, yr + 0.4, z0 + 0.15, z_pc + 0.01, g=0.004)
+        # tweezer notch at the pocket's rear end (underside)
+        tray = tray - taper_box(-3.5, 3.5, POCKET_Y1 - pl - 3.6, POCKET_Y1 - pl + 2.0, z0 - 0.1, z0 + 1.2, g=-0.03)
+        # read aperture: pocket ceiling -> top face, narrowest at the P/L
+        ap = 2.4
+        tray = tray - cone1(0, OPT_Y, z_pc - 0.01, ZP + 0.001, ap + 2 * (ZP - z_pc + 0.01) * TAN1)
+        tray = tray - cone1(0, OPT_Y, z1 + 0.1, ZP - 0.001, ap + 2 * (z1 + 0.1 - ZP) * TAN1)
+    else:
+        # strip pocket (open top)
+        pd = STRIP_T + POCKET_CLR
+        tray = tray - taper_box(-pw / 2, pw / 2, POCKET_Y1 - pl, POCKET_Y1, z1 - pd, z1 + 0.1, g=(pd + 0.1) * TAN1)
+        tray = tray - taper_box(-3.5, 3.5, POCKET_Y1 - pl - 3.6, POCKET_Y1 - pl + 2.0, z1 - 1.2, z1 + 0.1, g=0.03)
+        ap = 2.4
+        tray = tray - cone1(0, OPT_Y, z0 - 0.1, ZP + 0.001, ap + 2 * (ZP - z0 + 0.1) * TAN1)
+        tray = tray - cone1(0, OPT_Y, z1 - pd + 0.01, ZP - 0.001, ap + 2 * (z1 - pd + 0.01 - ZP) * TAN1)
     # detent: cantilever arm on +X side (slot through, free end towards +Y) with a ramped bump
     tray = tray - dbox(hw - 1.7, hw - 1.1, DET_Y - 12.0, DET_Y + 1.1, z0 - 0.1, z1 + 0.1, ZP, grow=True)
     tray = tray - dbox(hw - 1.7, hw + 0.3, DET_Y + 1.1, DET_Y + 1.6, z0 - 0.1, z1 + 0.1, ZP, grow=True)
@@ -579,7 +598,7 @@ def build_ref_components():
     tact.label, tact.color = "REF_tact_6x6x5", Color(0.2, 0.2, 0.2)
     bat = box(-BAT[0] / 2, BAT[0] / 2, DOOR_YC - BAT[1] / 2, DOOR_YC + BAT[1] / 2, DOOR_T + 0.05, DOOR_T + 0.05 + BAT[2])
     bat.label, bat.color = "REF_lipo_503035", Color(0.6, 0.6, 0.65)
-    zs = TRAY_Z0 + TRAY_T - STRIP_T - POCKET_CLR
+    zs = (TRAY_Z0 + POCKET_RECESS) if STRIP_FACE == "rear" else (TRAY_Z0 + TRAY_T - STRIP_T - POCKET_CLR)
     cuv = box(-STRIP_W / 2, STRIP_W / 2, POCKET_Y1 - STRIP_L, POCKET_Y1, zs, zs + STRIP_T)
     cuv.label, cuv.color = "REF_hb_strip_6x30x0.5", Color(0.85, 0.2, 0.2)
     led = box(-OB_X, OB_X, OPT_Y - 12, OPT_Y + 12, OB_Z1, OB_Z1 + LEDPCB_T)

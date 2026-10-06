@@ -98,10 +98,13 @@ def stacks():
     S.append(stack("Strip lateral clearance in the tray pocket (per side)", [
         ("pocket width / 2", H.STRIP_W / 2 + H.POCKET_CLR, 0.025), ("strip width / 2", -H.STRIP_W / 2, 0.025)],
         0.0, 0.12, "Strip is located by the pocket; confirm strip width tolerance (assumed +/-0.05)."))
-    S.append(stack("Strip lift: strip top to LED board (strip trapped vertically)", [
-        ("tray vertical clearance", +(H.CH_H - H.TRAY_T), 0.10), ("pocket depth", +(H.STRIP_T + H.POCKET_CLR), 0.03),
-        ("strip thickness", -H.STRIP_T, 0.03)],
-        0.05, 0.5, "Strip can never touch the LED board and can lift at most ~0.4 mm."))
+    S.append(stack("Strip read face to groove floor (rear-facing strip never rubs)", [
+        ("pocket recess (tray underside to pocket ceiling) - strip", +H.POCKET_RECESS, 0.03), ("strip thickness", 0.0, 0.03)],
+        0.1, 0.4, "Strip is held up against the pocket ceiling by the crush ribs; 0.25 air gap to the block floor."))
+    S.append(stack("Strip retention: crush-rib interference per side", [
+        ("pocket half width - rib reach", +(H.STRIP_W / 2 + H.POCKET_CLR) - (H.POCKET_CLR + H.RET_INTERF), 0.025),
+        ("strip half width", -H.STRIP_W / 2, 0.025)],
+        -0.15, -0.01, "Negative = interference: the strip snaps in and cannot drop out of the inverted pocket."))
     S.append(stack("Read window vs optical axis (axial offset)", [
         ("tray front face on the end stop (detent preload)", 0.0, 0.0),
         ("end stop to aperture (same part, HS-105)", 0.0, 0.05),
@@ -151,7 +154,8 @@ CRITICAL = [
     ("Optical", "Tray groove width x depth", f"{H.CH_W:.2f} x {H.CH_H:.2f}", "+0.05", "0", "tray 14.10 x 3.10", "cut small"),
     ("Optical", "End stop to aperture centre", f"{H.CH_Y_END - H.OPT_Y:.2f}", "+0.05", "-0.05", "strip read position", "-"),
     ("Tray", "Body width x thickness", f"{H.TRAY_W:.2f} x {H.TRAY_T:.2f}", "0", "-0.05 / -0.05", "tray stacks", "cut large"),
-    ("Tray", "Strip pocket W x L x D", f"{H.STRIP_W + 2*H.POCKET_CLR:.2f} x {H.STRIP_L + 2*H.POCKET_CLR:.2f} x {H.STRIP_T + H.POCKET_CLR:.2f}", "+0.05 / +0.1 / +0.03", "0 / 0 / -0.03", "strip 6.0 x 30 x 0.5 (ASSUMED)", "cut small"),
+    ("Tray", "Strip pocket W x L x D", f"{H.STRIP_W + 2*H.POCKET_CLR:.2f} x {H.STRIP_L + 2*H.POCKET_CLR:.2f} x {H.STRIP_T + H.POCKET_RECESS:.2f}", "+0.05 / +0.1 / +0.03", "0 / 0 / -0.03", "strip 6.0 x 30 x 0.5 (ASSUMED); pocket on UNDERSIDE", "cut small"),
+    ("Tray", "Retention ribs reach / pocket recess", f"{H.POCKET_CLR + H.RET_INTERF:.2f} / {H.POCKET_RECESS:.2f}", "+0.02 / +0.03", "-0.02 / -0.03", "strip snap-in, no rubbing", "leave long"),
     ("Tray", "Front face to pocket wall", f"{H.TRAY_FRONT_WALL:.2f}", "+0.05", "-0.05", "read window position", "-"),
     ("Tray", "Detent bump reach / notch depth", "0.45 / 0.40", "+/-0.05", "+/-0.05", "click + preload to stop", "-"),
     ("Optical", "Floor under groove / aperture", f"{H.CH_PLATE:.2f} / dia 2.00", "+/-0.05", "+/-0.03", "optical path", "-"),

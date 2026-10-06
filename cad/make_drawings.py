@@ -268,8 +268,8 @@ def sheet_tray(pdf):
                 finish="SPI B-1 sliding faces", mass=mass("tray"))
     Tr = P["tray"]
     yc = (H.HANDLE_Y0 - H.HANDLE_L + H.TRAY_Y1) / 2
-    pt = S.view(Tr, "front", *S.anchor("front", 60, 160, 2.0, (0, yc, 0)), 2.0, label="TOP (strip side)")
-    pu = S.view(Tr, "back", *S.anchor("back", 140, 160, 2.0, (0, yc, 0)), 2.0, label="UNDERSIDE")
+    pt = S.view(Tr, "front", *S.anchor("front", 60, 160, 2.0, (0, yc, 0)), 2.0, label="TOP (button side)")
+    pu = S.view(Tr, "back", *S.anchor("back", 140, 160, 2.0, (0, yc, 0)), 2.0, label="UNDERSIDE (strip side)")
     ps = S.section(Tr, "X", 0.0, "+", "left", *S.anchor("left", 205, 160, 2.0, (0, yc, H.ZP)), 2.0, label="SECTION A-A (x = 0)")
     ox, oy = S.anchor("bottom", 330, 245, 5.0, (0, H.OPT_Y, H.ZP))
     pd = S.section(Tr, "Y", H.OPT_Y, "+", "bottom", ox, oy, 5.0, clip=(283, 222, 377, 268))
@@ -281,29 +281,32 @@ def sheet_tray(pdf):
     # dims (top view)
     S.dim(pt((-H.TRAY_W / 2, H.TRAY_Y1, 0)), pt((H.TRAY_W / 2, H.TRAY_Y1, 0)), 6, f"{H.TRAY_W:.2f} 0/-0.05")
     pw = H.STRIP_W + 2 * H.POCKET_CLR; pl = H.STRIP_L + 2 * H.POCKET_CLR
-    S.dim(pt((-pw / 2, H.POCKET_Y1, 0)), pt((pw / 2, H.POCKET_Y1, 0)), 16, f"pocket {pw:.2f} +0.05/0")
-    S.dim(pt((-H.TRAY_W / 2 - 1, H.POCKET_Y1 - pl, 0)), pt((-H.TRAY_W / 2 - 1, H.POCKET_Y1, 0)), -6, f"{pl:.2f} +0.10/0", orient="v")
+    S.dim(pu((pw / 2, H.POCKET_Y1, 0)), pu((-pw / 2, H.POCKET_Y1, 0)), 16, f"pocket {pw:.2f} +0.05/0")
+    S.leader(pu((-(pw / 2 - 0.1), H.POCKET_Y1 - 6.0, 0)), 20, 10, f"4x crush rib, {H.RET_INTERF:.2f} interference/side\n(strip snaps in, cannot fall out)")
+    S.dim(pu((H.TRAY_W / 2 + 1, H.POCKET_Y1 - pl, 0)), pu((H.TRAY_W / 2 + 1, H.POCKET_Y1, 0)), -6, f"{pl:.2f} +0.10/0", orient="v")
     S.dim(pt((H.TRAY_W / 2 + 1, H.OPT_Y, 0)), pt((H.TRAY_W / 2 + 1, H.TRAY_Y1 + H.TRAY_PREGAP, 0)), 4, f"{H.TRAY_Y1 + H.TRAY_PREGAP - H.OPT_Y:.2f} ±0.05 (read axis)", orient="v")
     S.dim(pt((-H.HANDLE_W / 2, H.HANDLE_Y0 - H.HANDLE_L, 0)), pt((H.HANDLE_W / 2, H.HANDLE_Y0 - H.HANDLE_L, 0)), -6, f"handle {H.HANDLE_W:.1f}")
     S.leader(pt((0, H.OPT_Y, 0)), 30, 22, f"read aperture dia 2.40 (min, at P/L)\nblock aperture dia 2.00 is the optical stop")
-    S.leader(pt((0, H.POCKET_Y1 - pl - 1.5, 0)), 32, -8, "tweezer / finger notch")
+    S.leader(pu((0, H.POCKET_Y1 - pl - 1.5, 0)), 30, -8, "tweezer notch (underside)")
     S.leader(pt((H.HANDLE_W / 2 - 3, H.HANDLE_Y0 + 0.7, 0)), 18, -16, f"light-seal plug, {H.PLUG_GAP:.1f} radial gap in the mouth funnel")
     # section dims
     S.dim(ps((0, H.TRAY_Y1, H.TRAY_Z0)), ps((0, H.TRAY_Y1, H.TRAY_Z0 + H.TRAY_T)), 6, f"{H.TRAY_T:.2f} 0/-0.05")
-    S.leader(ps((0, -45, H.TRAY_Z0 + H.TRAY_T - 0.3)), 22, 10, f"pocket depth {H.STRIP_T + H.POCKET_CLR:.2f} ±0.03")
+    S.leader(ps((0, -45, H.TRAY_Z0 + 0.3)), 22, -10, f"underside pocket {H.STRIP_T + H.POCKET_RECESS:.2f} ±0.03 deep,\nstrip recessed {H.POCKET_RECESS:.2f} (no rubbing)")
     S.leader(ps((0, H.HANDLE_Y0 - 4, H.ZP + H.HANDLE_H / 2)), 22, -6, f"handle {H.HANDLE_H:.1f} x {H.HANDLE_L:.1f}, grip ribs")
     S.notes(250, 125, [
-        "HOW IT WORKS (single-button meter)",
-        " 1. Pull the tray out by the handle.",
-        " 2. Drop the strip into the pocket, read window down, pushed",
-        "    against the front wall (pocket locates it to +/-0.05).",
+        "HOW IT WORKS (single-button meter) - Rev C",
+        " 1. Pull the tray out, turn it over (strip pocket is on",
+        "    the UNDERSIDE: strip read side faces the battery side).",
+        " 2. Press the strip in against the front wall: 4 crush ribs",
+        "    hold it (it cannot drop out); pocket locates +/-0.05.",
+        "    Turn the tray back over.",
         " 3. Slide the tray in: it rides on the black optical block,",
         "    hits the end stop and CLICKS (detent bump into notch).",
         "    The detent sits 0.15 up the ramp -> it pushes the tray",
         "    onto the stop, so the strip position is set by the stop.",
         " 4. The handle plug closes the mouth (light seal).",
-        " 5. Press the one button -> measure. Tray lift <= 0.4,",
-        "    lateral <= 0.15, axial window error <= 0.3 (stacks 15-22).",
+        " 5. Press the one button -> measure. Strip read face",
+        "    0.25 clear of the floor; lateral <= 0.15; axial <= 0.3.",
         "STRIP SIZE IS ASSUMED 6.0 x 30 x 0.5 - one parameter each.",
     ], fs=5.3, lh=3.4, title="NOTES")
     S.notes(14, 70, [
@@ -620,13 +623,13 @@ def sheet_dfm(pdf):
                      str(m.get("undercut_columns")), str(m.get("insert_wrong_order_columns")), str(nd), str(m.get("parting_z_mm"))])
     S.table(14, 282, [34, 18, 16, 24, 20, 20, 48, 18], rows, fs=5.2, row_h=4.4, title="AUTOMATED CAD CHECKS (this revision)")
     inter = MOLD.get("_interferences", [])
-    S.text(14, 250, f"Assembly interference check, all part pairs incl. PCB/TFT/USB-C/tact/LiPo/strip/tray/LED board: {inter or 'NONE'} (optical x tray = designed 0.05 detent preload)", fs=5.6)
+    S.text(14, 250, f"Assembly interference check, all part pairs incl. PCB/TFT/USB-C/tact/LiPo/strip/tray/LED board: {inter or 'NONE'} (optical x tray = detent preload; tray x strip = 0.08 crush-rib retention, both by design)", fs=5.6)
     S.notes(14, 242, [
         "How the checks work (hemosure_casing.py + mold_tools.py, re-run on every change):",
         " - Undercut: vertical rays on a 0.25 mm grid; any ray crossing the part in 2+ intervals = trapped steel (validated on a test part).",
         " - Inserts: rays through core, cavity and part; order bottom->top must be one steel half, part, other half (no interlock).",
         " - Draft: every face's angle to the draw axis; faces taller than 1 mm with < 0.2° are listed (target: none).",
-        " - Stack-ups: 22 worst-case + RSS stacks, sheet 7. All pass worst case at this revision.",
+        " - Stack-ups: 23 worst-case + RSS stacks, sheet 7. All pass worst case at this revision.",
     ], fs=5.2, lh=3.3, title="METHOD")
     S.notes(14, 212, [
         "Wall 2.00 nominal (ABS range 1.2-3.5); thinnest: lens-pocket ledge 0.80, door ledge 0.75, lap skirt 1.00.",

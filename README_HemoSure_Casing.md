@@ -1,4 +1,9 @@
-# HemoSure Hb meter casing (Levram) - Rev B, 29 Sep 2026 (DRAFT for DFM review)
+# HemoSure Hb meter casing (Levram) - Rev C, 6 Oct 2026 (DRAFT for DFM review)
+
+Rev C: strip pocket moved to the tray UNDERSIDE - the strip's read side faces the battery/rear side.
+4 crush ribs (0.08/side) hold the strip so it cannot drop out; strip recessed 0.25 so it never rubs the
+groove floor. Load: pull tray, turn over, press strip in, turn back, slide home. Switch back with
+STRIP_FACE = "front" in cad/hemosure_casing.py. 23 stack-ups, all pass worst case.
 
 Rev B: single-button meter confirmed; strip now loads in a slide-in STRIP TRAY (HS-106, black ABS)
 - drawer-style, hard end stop + detent click, handle doubles as the light-seal plug. Tool B is now 1+1+1
